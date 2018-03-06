@@ -408,6 +408,8 @@ function showPublishedProducts_1($cat_id = 1, $show_cat_det = 1, $cels_or_list =
     }
    $category_list= $rows3;
 
+   var_dump($rows);
+
     switch ($cels_or_list) {
         case 1:
             return front_end_catalog_list($rows, $params, $page_num, $prod_count, $prod_in_page, $ratings, $voted, $categories, $category_list, $params1, $cat_rows, $cat_id, $child_ids, $params7, $categor, $par, $cels_or_list, $ident);
@@ -423,6 +425,159 @@ function showPublishedProducts_1($cat_id = 1, $show_cat_det = 1, $cels_or_list =
             return front_end_catalog_cells($rows, $params, $page_num, $prod_count, $prod_in_page, $ratings, $voted, $categories, $category_list, $params1, $cat_rows, $cat_id, $child_ids, $params7, $categor, $par, $cels_or_list, $ident);
     }
 }
+
+
+
+
+function showProductsFMP($cat_id = 0, $show_cat_det = 1, $cels_or_list = '', $show_sub = 1, $show_sub_prod = 1, $show_prod = 1)
+{
+    global $ident;
+    global $wpdb;
+
+	$cat_id = 0; /*Fixed to All categories*/
+
+    $params7['show_sub'] = $show_sub;
+    $params7['show_sub_prod'] = $show_sub_prod;
+    $params7['show_prod'] = $show_prod;
+    if (!isset($params7['show_sub'])) {
+        $params7['show_sub'] = 1;
+    }
+    if (!isset($params7['show_sub_prod'])) {
+        $params7['show_sub_prod'] = 2;
+    }
+    if (!isset($params7['show_prod'])) {
+        $params7['show_prod'] = 1;
+    }
+
+    $params = $wpdb->get_results("SELECT * FROM " . $wpdb->prefix . "spidercatalog_params");
+    $new_param = array();
+    foreach ($params as $param) {
+        $new_param[$param->name] = $param->value;
+    }
+    $params = $new_param;
+
+    switch ($cels_or_list) {
+        case 'list':
+            $cels_or_list = 1;
+            $prod_in_page = $params['list_count_of_products_in_the_page'];
+            break;
+        case 'cells2':
+            $cels_or_list = 2;
+            $prod_in_page = $params['cells2_count_of_product_in_the_row'] * $params['cells2_count_of_rows_in_the_page'];
+            break;
+        case 'wcells':
+            $cels_or_list = 3;
+            $prod_in_page = $params['wcells_count_of_products_in_the_page'];
+            break;
+        case 'thumb':
+            $cels_or_list = 4;
+            $prod_in_page = $params['thumb_count_of_product_in_the_row'] * $params['thumb_count_of_rows_in_the_page'];
+            break;
+        case 'cells3':
+            $cels_or_list = 5;
+            $prod_in_page = $params['cells3_count_of_product_in_the_row'] * $params['cells3_count_of_rows_in_the_page'];
+            break;
+        case '':
+            $cels_or_list = 0;
+            $prod_in_page = $params['cells1_count_of_product_in_the_row'] * $params['cells1_count_of_rows_in_the_page'];
+            break;
+    }
+
+    $params1['show_category_details'] = $show_cat_det;
+    $params1['categories'] = $cat_id;
+    if (isset($_GET['page_num_' . $cels_or_list . '_' . $ident . '']))
+        $page_num = $_GET['page_num_' . $cels_or_list . '_' . $ident . ''];
+    else
+        $page_num = 1;
+    if (isset($_POST['cat_id_' . $cels_or_list . '_' . $ident . ''])) {
+        if ($_POST['cat_id_' . $cels_or_list . '_' . $ident . ''] != 0) {
+            $cat_id = (int)$_POST['cat_id_' . $cels_or_list . '_' . $ident . ''];
+        } else {
+            $cat_id = 0;
+        }
+    } else if (isset($_GET['cat_id_' . $cels_or_list . '_' . $ident . ''])) {
+        if ($_GET['cat_id_' . $cels_or_list . '_' . $ident . ''] != 0) {
+            $cat_id = (int)$_GET['cat_id_' . $cels_or_list . '_' . $ident . ''];
+        } else {
+            $cat_id = 0;
+        }
+    }  
+    if (isset ($_POST['subcat_id_' . $cels_or_list . '_' . $ident . '']) && $_POST['subcat_id_' . $cels_or_list . '_' . $ident . ''] != "") {
+        $subcat_id = (int)$_POST['subcat_id_' . $cels_or_list . '_' . $ident . ''];
+    } else {
+
+        $subcat_id = $cat_id;
+    }
+
+	$child_ids = array();
+
+    if (isset($_POST['prod_name_' . $cels_or_list . '_' . $ident . ''])) {
+        if ($_POST['prod_name_' . $cels_or_list . '_' . $ident . ''] != '' && $_POST['prod_name_' . $cels_or_list . '_' . $ident . ''] != __('Search...', 'sp_catalog'))
+            $prod_name = esc_html(stripslashes($_POST['prod_name_' . $cels_or_list . '_' . $ident . '']));
+        else
+            $prod_name = '';
+    } else if (isset($_GET['prod_name_' . $cels_or_list . '_' . $ident . '']) && $_GET['prod_name_' . $cels_or_list . '_' . $ident . ''] != '' && $_GET['prod_name_' . $cels_or_list . '_' . $ident . ''] != __('Search...', 'sp_catalog'))
+        $prod_name = esc_html(stripslashes($_GET['prod_name_' . $cels_or_list . '_' . $ident . '']));
+    else 
+        $prod_name = '';
+    
+    
+	// Build dummy results! -> limit " . (($page_num - 1) * $prod_in_page) . "," . $prod_in_page
+
+	$rows = array( (object)array( "id"=>1, "name"=>"P1", "category_id"=>"0,", "description"=>"Bla", "image_url"=>"http://127.0.0.1:8081/wp/wp-content/plugins/catalog/Front_images/sampleimages/7_19977_1324390185.jpg******0;;;http://127.0.0.1:8081/wp/wp-content/plugins/catalog/Front_images/sampleimages/11448_2.jpg******0;;;http://127.0.0.1:8081/wp/wp-content/plugins/catalog/Front_images/sampleimages/panasonictx_pr50u30.jpg", "cost"=>"950.00", "market_cost"=>"1000.00", "param"=>"par_TVSystem@@:@@DVB-T DVB-C par_Diagonal@@:@@50&quot; / 127 cm par_Interface@@:@@RCA, RGB, VGA, HDMI 
+	x2, Scart, SD card par_Refresh Rate@@:@@600 Hz Sub Field Drive", "ordering"=>2, "published"=>1, "published_in_parent"=>0 ) );
+    $prod_count = count($rows);
+
+    
+	$cat_rows = array();
+
+    $ratings = array();
+    $voted = array();
+    $categories = NULL;
+	/*
+    if ($params7['show_prod'] == 1) {
+        foreach ($rows as $row) {
+            $id = $row->id;
+            $query = $wpdb->prepare("SELECT AVG(vote_value) as rating FROM " . $wpdb->prefix . "spidercatalog_product_votes  WHERE product_id = %d ", $id);
+
+            $row1 = $wpdb->get_var($query);
+            $ratings[$id] = substr($row1, 0, 3);
+            $query = $wpdb->prepare("SELECT vote_value FROM " . $wpdb->prefix . "spidercatalog_product_votes  WHERE product_id = %d and remote_ip='" . $_SERVER['REMOTE_ADDR'] . "' ", $id);
+
+
+            $num_rows = $wpdb->get_var($query);
+            $voted[$id] = $num_rows;
+
+            $query = "SELECT * FROM " . $wpdb->prefix . "spidercatalog_product_categories WHERE CONCAT(',', '" . $row->category_id . "') LIKE CONCAT('%,', id, ',%')";
+            $row2 = $wpdb->get_results($query);
+            if ($row2)
+              foreach($row2 as $rr)
+                $categories[$rr->id] = $rr->name;
+            else
+                $categories[0] = '';
+        }
+    }*/
+    $par = 0;
+	
+   $category_list = array();
+   $categor = array();
+
+    switch ($cels_or_list) {
+        case 1:
+            return front_end_catalog_list($rows, $params, $page_num, $prod_count, $prod_in_page, $ratings, $voted, $categories, $category_list, $params1, $cat_rows, $cat_id, $child_ids, $params7, $categor, $par, $cels_or_list, $ident);
+        case 2:
+            return front_end_catalog_cells2($rows, $params, $page_num, $prod_count, $prod_in_page, $ratings, $voted, $categories, $category_list, $params1, $cat_rows, $cat_id, $child_ids, $params7, $categor, $par, $cels_or_list, $ident);
+        case 3:
+            return front_end_catalog_wcells($rows, $params, $page_num, $prod_count, $prod_in_page, $ratings, $voted, $categories, $category_list, $params1, $cat_rows, $cat_id, $child_ids, $params7, $categor, $par, $cels_or_list, $ident);
+        case 4:
+            return front_end_catalog_thumb($rows, $params, $page_num, $prod_count, $prod_in_page, $ratings, $voted, $categories, $category_list, $params1, $cat_rows, $cat_id, $child_ids, $params7, $categor, $par, $cels_or_list, $ident);
+        case 5:
+            return front_end_catalog_cells3($rows, $params, $page_num, $prod_count, $prod_in_page, $ratings, $voted, $categories, $category_list, $params1, $cat_rows, $cat_id, $child_ids, $params7, $categor, $par, $cels_or_list, $ident);
+        case 0:
+            return front_end_catalog_cells($rows, $params, $page_num, $prod_count, $prod_in_page, $ratings, $voted, $categories, $category_list, $params1, $cat_rows, $cat_id, $child_ids, $params7, $categor, $par, $cels_or_list, $ident);
+    }
+}
+
 
 
 ?>
