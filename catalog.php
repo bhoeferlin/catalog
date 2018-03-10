@@ -145,7 +145,8 @@ function   spider_cat_Products_list($id, $details, $type, $showsub, $showsubprod
     if (isset($_GET['product_id'])) {
         if (isset($_GET['view'])) {
             if ($_GET['view'] == 'spidercatalog') {
-                return /*showPublishedProducts_1*/showProductsFMP($id, $details, $type, $showsub, $showsubprod, $showprod);
+                //return showPublishedProducts_1($id, $details, $type, $showsub, $showsubprod, $showprod);
+				return showProductsFMP($id, $details, $type, $showsub, $showsubprod, $showprod);
             } else {
                 return front_end_single_product($_GET['product_id']);
             }
@@ -153,7 +154,8 @@ function   spider_cat_Products_list($id, $details, $type, $showsub, $showsubprod
             return front_end_single_product($_GET['product_id']);
         }
     } else {
-        return /*showPublishedProducts_1*/showProductsFMP($id, $details, $type, $showsub, $showsubprod, $showprod);
+        //return showPublishedProducts_1($id, $details, $type, $showsub, $showsubprod, $showprod);
+		return showProductsFMP($id, $details, $type, $showsub, $showsubprod, $showprod);
     }
 }
 

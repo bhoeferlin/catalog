@@ -521,12 +521,49 @@ function showProductsFMP($cat_id = 0, $show_cat_det = 1, $cels_or_list = '', $sh
     else 
         $prod_name = '';
     
-    
-	// Build dummy results! -> limit " . (($page_num - 1) * $prod_in_page) . "," . $prod_in_page
 
-	$rows = array( (object)array( "id"=>1, "name"=>"P1", "category_id"=>"0,", "description"=>"Bla", "image_url"=>"http://127.0.0.1:8081/wp/wp-content/plugins/catalog/Front_images/sampleimages/7_19977_1324390185.jpg******0;;;http://127.0.0.1:8081/wp/wp-content/plugins/catalog/Front_images/sampleimages/11448_2.jpg******0;;;http://127.0.0.1:8081/wp/wp-content/plugins/catalog/Front_images/sampleimages/panasonictx_pr50u30.jpg", "cost"=>"950.00", "market_cost"=>"1000.00", "param"=>"par_TVSystem@@:@@DVB-T DVB-C par_Diagonal@@:@@50&quot; / 127 cm par_Interface@@:@@RCA, RGB, VGA, HDMI 
-	x2, Scart, SD card par_Refresh Rate@@:@@600 Hz Sub Field Drive", "ordering"=>2, "published"=>1, "published_in_parent"=>0 ) );
-    $prod_count = count($rows);
+	$search_string = "";
+	if (isset($_GET['title_search']))
+	{
+        $search_string = $_GET['title_search'];
+	}
+    else if (isset($_POST['title_search']))
+	{
+        $search_string = $_POST['title_search'];
+	}
+
+	// TODO - test if valid ean/gtin
+	
+	if( empty($search_string) )
+	{
+		// Build dummy results! -> limit " . (($page_num - 1) * $prod_in_page) . "," . $prod_in_page
+		$rows = array( (object)array( "id"=>1, "name"=>"P1", "category_id"=>"0,", "description"=>"Bla", "image_url"=>"http://127.0.0.1:8081/wp/wp-content/plugins/catalog/Front_images/sampleimages/7_19977_1324390185.jpg******0;;;http://127.0.0.1:8081/wp/wp-content/plugins/catalog/Front_images/sampleimages/11448_2.jpg******0;;;http://127.0.0.1:8081/wp/wp-content/plugins/catalog/Front_images/sampleimages/panasonictx_pr50u30.jpg", "cost"=>"950.00", "market_cost"=>"1000.00", "param"=>"par_TVSystem@@:@@DVB-T DVB-C par_Diagonal@@:@@50&quot; / 127 cm par_Interface@@:@@RCA, RGB, VGA, HDMI 
+		x2, Scart, SD card par_Refresh Rate@@:@@600 Hz Sub Field Drive", "ordering"=>2, "published"=>1, "published_in_parent"=>0 ) );
+		$prod_count = count($rows);
+	}
+	else 
+	{
+		// TODO for multipages: -> limit " . (($page_num - 1) * $prod_in_page) . "," . $prod_in_page
+		$con = mysql_connect ("localhost", "root", "") or die ("Cannot connect to DB!");
+		mysql_select_db("fmp_db") or die ("DB does not exist!");
+
+		$sql_query = 'SELECT * FROM products INNER JOIN product_gtin ON product_gtin.product_id = products.product_id WHERE product_gtin.gtin13 = "' . $search_string .'"';
+
+		$res = mysql_query($sql_query);
+        $rowCount = 0;
+ 
+		$rows = array();
+        while($row = mysql_fetch_object($res))
+        {
+			$rows[] = (object)array( "id"=>$row->product_id, "name"=>$row->name, "category_id"=>"0,", "description"=>$row->description, "image_url"=>$row->image_url, "cost"=>$row->cost, "market_cost"=>$row->market_cost, "param"=>$row->param, "ordering"=>2, "published"=>1, "published_in_parent"=>0 );
+		    $rowCount = $rowCount + 1;
+		}
+
+		mysql_close($con);
+	}
+}
+
+    
 
     
 	$cat_rows = array();
